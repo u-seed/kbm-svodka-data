@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>Сводка ҚБМ</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">КБМ</div>
+    <div>
+      <div class="title">Сводка</div>
+      <div class="subtitle" id="lastDate">—</div>
+    </div>
+  </div>
+  <div class="actions">
+    <label class="btn-icon" for="fileInput" title="Загрузить XLSX">📂
+      <input id="fileInput" type="file" accept=".xlsx,.xlsm" hidden>
+    </label>
+    <button class="btn-icon" id="refreshBtn" title="Обновить с сервера">↻</button>
+    <button class="btn-icon" id="menuBtn" title="Меню">⋮</button>
+  </div>
+</header>
+
+<main id="dashboard">
+
+  <!-- ГЛАВНАЯ КАРТА: ДОБЫЧА ЗА СУТКИ -->
+  <section class="hero">
+    <div class="hero-label">Добыча за сутки, т</div>
+    <div class="hero-value" id="heroQn">—</div>
+    <div class="hero-meta">
+      <span id="heroDelta" class="delta">—</span>
+      <span class="dot">·</span>
+      <span id="heroFact">Qн факт: —</span>
+    </div>
+  </section>
+
+  <!-- KPI СЕТКА -->
+  <section class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Сдача, т/сут</div>
+      <div class="kpi-value" id="kSdacha">—</div>
+      <div class="kpi-sub" id="kSdachaSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Жидкость ДНС, м³/сут</div>
+      <div class="kpi-value" id="kZh">—</div>
+      <div class="kpi-sub" id="kObv">обв. —</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Технол. потери, т</div>
+      <div class="kpi-value" id="kLoss">—</div>
+      <div class="kpi-sub" id="kLossSub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Остаток в парке, т</div>
+      <div class="kpi-value" id="kPark">—</div>
+      <div class="kpi-sub" id="kParkSub">—</div>
+    </div>
+  </section>
+
+  <!-- НАКОПИТЕЛЬНО ЗА МЕСЯЦ -->
+  <section class="card">
+    <div class="card-title">
+      <span id="monthName">Месяц</span>
+      <span class="muted" id="monthDays">— из — дней</span>
+    </div>
+    <div class="month-row">
+      <div>
+        <div class="muted small">Добыча накоп., т</div>
+        <div class="big" id="mDob">—</div>
+      </div>
+      <div>
+        <div class="muted small">Сдача накоп., т</div>
+        <div class="big" id="mSd">—</div>
+      </div>
+    </div>
+    <div class="month-row">
+      <div>
+        <div class="muted small">Средне в сутки, т</div>
+        <div class="big" id="mAvg">—</div>
+      </div>
+      <div>
+        <div class="muted small">Прогноз на месяц, т</div>
+        <div class="big" id="mFor">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ГРАФИК ДОБЫЧИ ПО ДНЯМ -->
+  <section class="card">
+    <div class="card-title">
+      Добыча по дням, т
+      <span class="muted small" id="chartRange">—</span>
+    </div>
+    <canvas id="chart" height="180"></canvas>
+  </section>
+
+  <!-- ПАР И ЗАКАЧКА -->
+  <section class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Пар всего за месяц, т</div>
+      <div class="kpi-value" id="kPar">—</div>
+      <div class="kpi-sub" id="kParSub">ППГ-3 / СПГУ / МПГУ</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Закачка воды, м³</div>
+      <div class="kpi-value" id="kZak">—</div>
+      <div class="kpi-sub" id="kZakSub">внутрикон. / закон.</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Газ всего, тыс.м³</div>
+      <div class="kpi-value" id="kGas">—</div>
+      <div class="kpi-sub" id="kGasSub">Каламкас + попутный</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ОЗПВ, м³</div>
+      <div class="kpi-value" id="kOzpv">—</div>
+      <div class="kpi-sub">опресн. вода</div>
+    </div>
+  </section>
+
+  <!-- ФОНД СКВАЖИН -->
+  <section class="card">
+    <div class="card-title">Фонд скважин</div>
+    <div class="fund-block">
+      <div class="fund-h">Добывающий фонд (действующий)</div>
+      <div class="fund-row">
+        <span>Фонтан</span><b id="fFlow">—</b>
+        <span>ШГН</span><b id="fPump">—</b>
+        <span>Всего</span><b id="fTotal">—</b>
+      </div>
+      <div class="fund-h">В простое</div>
+      <div class="fund-row">
+        <span>Фонтан</span><b id="fInFlow">—</b>
+        <span>ШГН</span><b id="fInPump">—</b>
+        <span>Всего</span><b id="fInTotal">—</b>
+      </div>
+      <div class="fund-h">Нагнетательный фонд (действующий)</div>
+      <div class="fund-row">
+        <span>Пар</span><b id="fInjSt">—</b>
+        <span>Вода</span><b id="fInjW">—</b>
+        <span>Всего</span><b id="fInjT">—</b>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <button class="link" id="loadDemoBtn">Загрузить демо-данные</button>
+    <div class="muted small" id="srcInfo">Источник: локально</div>
+  </footer>
+
+</main>
+
+<!-- МОДАЛЬНОЕ МЕНЮ -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-body">
+    <h3>Меню</h3>
+    <button class="row-btn" id="mUpload">📂 Загрузить XLSX</button>
+    <button class="row-btn" id="mSync">🔗 Настроить авто-синхронизацию</button>
+    <button class="row-btn" id="mClear">🗑️ Очистить кэш</button>
+    <button class="row-btn" id="mClose">Закрыть</button>
+    <div id="syncBox" class="sync-box" hidden>
+      <p class="muted small">Прямая ссылка на XLSX (OneDrive / GitHub raw / Google Drive direct):</p>
+      <input id="syncUrl" type="text" placeholder="https://...xlsx">
+      <button class="btn primary" id="saveSync">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
